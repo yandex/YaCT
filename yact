@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+"""Run YaCT CLI from a checkout without a global pip install.
+
+yact needs a few pure-Python host deps (see ``_HOST_DEPS``). If any are missing
+we offer to create a local ``.venv``, install them, and re-exec through it.
+
+Escape hatches:
+  YACT_AUTO_VENV=1   accept the venv prompt automatically (CI / scripting)
+  YACT_NO_VENV=1     never bootstrap; run with the current interpreter as-is
+"""
+
+from __future__ import annotations
+
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parent
+_VENV = _ROOT / ".venv"
+
+# import name -> pip package name
+_HOST_DEPS = {"yaml": "pyyaml", "paramiko": "paramiko"}
+
+
+def _missing_deps() -> list[str]:
+    """pip names of host deps that don't import under the current interpreter."""
+    from importlib.util import find_spec
+
+    return [pkg for mod, pkg in _HOST_DEPS.items() if find_spec(mod) is None]
+
+
+def _venv_python() -> Path:
+    return _VENV / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+
+
+def _pip_hint() -> str:
+    return "pip install " + " ".join(_HOST_DEPS.values())
+
+
+def _build_venv() -> bool:
+    """Create .venv (inheriting system packages) and install the host deps."""
+    try:
+        if not _venv_python().exists():
+            print(f"[yact] creating venv at {_VENV} …", file=sys.stderr)
+            subprocess.check_call(
+                [sys.executable, "-m", "venv", "--system-site-packages", str(_VENV)]
+            )
+        print(f"[yact] installing {', '.join(_HOST_DEPS.values())} …", file=sys.stderr)
+        subprocess.check_call(
+            [str(_venv_python()), "-m", "pip", "install", "-q", *_HOST_DEPS.values()]
+        )
+        return True
+    except (subprocess.CalledProcessError, OSError) as exc:
+        print(f"[yact] venv bootstrap failed: {exc}", file=sys.stderr)
+        print(
+            "[yact] install the deps manually and retry:\n"
+            f"         {_pip_hint()}\n"
+            "       (Debian/Ubuntu may need `apt install python3-venv` first).",
+            file=sys.stderr,
+        )
+        return False
+
+
+def _maybe_reexec() -> None:
+    """If host deps are missing, offer a local venv and re-exec through it."""
+    # In the container /opt/venv already has everything; never nest a venv there.
+    # These guards also stop us from recursing after we re-exec.
+    if os.environ.get("YACT_IN_DOCKER") or os.environ.get("YACT_BOOTSTRAPPED") == "1":
+        return
+    if os.environ.get("YACT_NO_VENV") == "1":
+        return
+    if not _missing_deps():
+        return
+
+    py = _venv_python()
+    if not py.exists():
+        missing = ", ".join(_missing_deps())
+        if os.environ.get("YACT_AUTO_VENV") == "1":
+            pass  # auto-accept
+        elif not sys.stdin.isatty():
+            print(
+                f"[yact] required host deps missing ({missing}); some commands may "
+                f"not work. Set YACT_AUTO_VENV=1 to auto-install, or run `{_pip_hint()}`.",
+                file=sys.stderr,
+            )
+            return
+        else:
+            reply = input(
+                f"[yact] Required host deps missing ({missing}). "
+                f"Create {_VENV.name}/ and install them? [Y/n] "
+            ).strip().lower()
+            if reply in ("n", "no"):
+                print(
+                    "[yact] continuing without them; some commands may not work.",
+                    file=sys.stderr,
+                )
+                return
+        if not _build_venv():
+            return
+
+    os.execve(
+        str(py),
+        [str(py), str(Path(__file__).resolve()), *sys.argv[1:]],
+        {**os.environ, "YACT_BOOTSTRAPPED": "1"},
+    )
+
+
+_maybe_reexec()
+
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+from lib.cli.main import main
+
+if __name__ == "__main__":
+    sys.exit(main())

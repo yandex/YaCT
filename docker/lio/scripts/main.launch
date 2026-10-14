@@ -1,0 +1,63 @@
+<!-- Parameters derived from FAST_LIO launch/mapping_mid360.launch (GPL-2.0, see
+     docker/lio/fast_lio/LICENSE); modified by YANDEX LLC on 2026-06-08. -->
+<launch>
+
+	<arg name="start_driver" default="true"/>
+	<arg name="start_bridge" default="false"/>
+    <arg name="map" default=""/>
+    <arg name="freeze_map" default="0"/>
+    <arg name="record" default="false"/>
+    <arg name="record_path" default="default.rosbag"/>
+    <arg name="pcd_save" default="false"/>
+
+    <!-- LIDAR Specs -->
+	<rosparam command="load" file="$(find fast_lio)/config/mid360.yaml" />
+
+    <!-- LIO General Config -->
+	<param name="feature_extract_enable" type="bool" value="0"/>
+	<param name="point_filter_num" type="int" value="1"/>
+	<param name="max_iteration" type="int" value="3" />
+	<param name="filter_size_surf" type="double" value="0.5" />
+	<param name="filter_size_map" type="double" value="0.5" />
+    <param name="trim_percentile" type="double" value="0.08" />
+    <param name="trim_threshold" type="double" value="0.12" />
+	<param name="cube_side_length" type="double" value="1000" />
+	<param name="runtime_pos_log_enable" type="bool" value="0" />
+    <param name="publish/path_en" type="bool" value="1"/>
+
+    <!-- Mapping Parameters -->
+    <param name="mapping/map_path" type="string" value="$(arg map)"/>
+    <param name="mapping/save_map_at_end" type="bool" value="0"/>
+    <param name="mapping/freeze_map_updates" type="bool" value="$(arg freeze_map)"/>
+    <param name="mapping/use_saved_map" type="bool" value="$(eval arg('map') != '')"/>
+    <param name="pcd_save/pcd_save_en" type="bool" value="$(arg pcd_save)"/>
+    <param name="publish/scan_effect_en" type="bool" value="true"/>
+
+    <!-- Fast-LIO Node -->
+    <node pkg="fast_lio" type="fastlio_mapping" name="laserMapping" output="screen">
+        <remap from="/livox/lidar" to="/lidar_driver/livox/lidar"/>
+        <remap from="/livox/imu" to="/lidar_driver/livox/imu"/>
+    </node>
+
+    <!-- TODO: a proper floor alignment algorithm is required; used for visualization -->
+    <node pkg="tf" type="static_transform_publisher" name="g1_head_broadcast"
+        args="0 0 1.3 1 0 0 0 camera_init map 10" />
+
+	<group if="$(arg start_driver)">
+		<include file="$(find livox_ros_driver2)/launch_ROS1/msg_MID360.launch" ns="lidar_driver"/>
+		<param name="/lidar_driver/user_config_path" type="string" value="$(dirname)/MID360_our_config.json"/>
+		<param name="/lidar_driver/publish_freq" type="double" value="20.0"/>
+	</group>
+
+	<group if="$(arg start_bridge)">
+        <include file="$(find foxglove_bridge)/launch/foxglove_bridge.launch">
+            <arg name="port" value="8765" />
+        </include>
+	</group>
+
+    <group if="$(arg record)">
+        <node pkg="rosbag" type="record" name="record_lidar"
+            args="--lz4 /lidar_driver/livox/lidar /lidar_driver/livox/imu /cloud_registered /path /Odometry /RawOdometry /tf /Laser_map /rosout -O $(arg record_path)"
+            output="screen" />
+    </group>
+</launch>

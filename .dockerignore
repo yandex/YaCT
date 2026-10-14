@@ -1,0 +1,15 @@
+# Keep docker build context small (repo bind-mounted at runtime anyway).
+assets/checkpoints/
+assets/mujoco/
+assets/trajectories/
+assets/fk/
+assets/tts/
+docs/
+tmp/
+logs/
+*.mp4
+*.egg-info/
+.venv/
+.git/
+__pycache__/
+*.pyc

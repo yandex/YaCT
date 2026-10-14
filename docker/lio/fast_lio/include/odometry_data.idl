@@ -1,0 +1,12 @@
+// Added by YANDEX LLC on 2026-06-08 for DDS odometry transport.
+
+struct OdometryData {
+    float x;
+    float y;
+    float z;
+    float q_w;
+    float q_x;
+    float q_y;
+    float q_z;
+    double stamp;
+};

@@ -1,0 +1,17 @@
+# Runtime deps for YaCT sim/deploy (installed into /opt/venv).
+mujoco==3.4.0
+pytorch-kinematics==0.7.0
+arm_pytorch_utilities==0.5.0
+scipy==1.15.3
+pydantic>=2
+pyyaml
+opencv-python-headless
+pyzmq
+tqdm
+# SSH to the Jetson to launch/stop Fast-LIO localization (real-robot deploy only).
+paramiko
+# Deploy console / FSM graph rendering (logs.py falls back to plain text if absent).
+rich
+# Vuer WebXR VR backend for `--vr` (serves the headset page; cert autogen).
+vuer==0.1.6
+cryptography

@@ -1,0 +1,1447 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A closed-loop, whole-body teleoperation policy for humanoid robots driven by a sparse three-point interface.">
+  <title>YaCT: Yet Another Closed-loop Teleoperation</title>
+  <style>
+:root {
+  --paper: #f5f2e9;
+  --paper-deep: #ebe7db;
+  --card: #fffdf8;
+  --ink: #172321;
+  --muted: #68716e;
+  --line: #cec9bc;
+  --teal: #0f766e;
+  --teal-dark: #0a514c;
+  --teal-soft: #dcece8;
+  --red: #b95b50;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+}
+
+.progress-track {
+  position: fixed;
+  z-index: 100;
+  inset: 0 0 auto;
+  height: 3px;
+  background: transparent;
+}
+
+.progress-value {
+  height: 100%;
+  background: var(--teal);
+  transition: width 80ms linear;
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: 74px;
+  padding: 0 clamp(24px, 4vw, 72px);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  border-bottom: 1px solid color-mix(in srgb, var(--line), transparent 25%);
+  background: color-mix(in srgb, var(--paper), transparent 8%);
+  backdrop-filter: blur(18px);
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: max-content;
+  font-weight: 760;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+
+.wordmark-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  border-radius: 50%;
+  background: var(--teal);
+  color: white;
+  font-family: var(--serif);
+  font-weight: 800;
+}
+
+.site-header nav {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.site-header nav a,
+.paper-link {
+  text-decoration: none;
+}
+
+.site-header nav a:hover,
+.paper-link:hover {
+  color: var(--teal);
+}
+
+.paper-link {
+  justify-self: end;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+main {
+  overflow: clip;
+}
+
+.hero {
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: clamp(72px, 10vw, 146px) clamp(24px, 5vw, 82px) 80px;
+}
+
+.hero-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 28px;
+  color: var(--teal-dark);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hero-kicker span {
+  padding: 8px 12px;
+  border: 1px solid #a9cdc7;
+  border-radius: 999px;
+}
+
+.hero h1 {
+  max-width: 1140px;
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(58px, 8.2vw, 126px);
+  font-weight: 500;
+  letter-spacing: -0.065em;
+  line-height: 0.92;
+}
+
+.hero-subtitle {
+  max-width: 850px;
+  margin: 42px 0 0;
+  color: var(--muted);
+  font-size: clamp(21px, 2.3vw, 32px);
+  line-height: 1.35;
+}
+
+.hero-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 42px 0 26px;
+}
+
+.hero-facts span {
+  padding: 11px 15px;
+  border-radius: 6px;
+  background: var(--ink);
+  color: white;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.hero-media {
+  position: relative;
+  margin: 0;
+  min-height: 420px;
+  padding: clamp(22px, 3vw, 46px);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background:
+    linear-gradient(90deg, transparent 49.9%, #d8d4c8 50%, transparent 50.1%),
+    linear-gradient(0deg, transparent 49.9%, #d8d4c8 50%, transparent 50.1%),
+    var(--card);
+}
+
+.hero-media::before {
+  content: "";
+  position: absolute;
+  inset: 18px;
+  pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--line), transparent 55%);
+  border-radius: 11px;
+}
+
+.hero-media img {
+  position: relative;
+  display: block;
+  width: min(100%, 1160px);
+  max-height: 650px;
+  object-fit: contain;
+}
+
+.article-frame {
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 100px 0 140px;
+  display: grid;
+  grid-template-columns: 190px minmax(0, 760px);
+  justify-content: start;
+  gap: 56px;
+}
+
+.toc {
+  position: sticky;
+  top: 112px;
+  transform: translateX(-128px);
+  height: max-content;
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+
+.toc p {
+  margin: 0;
+  padding: 18px 0 13px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.toc a {
+  padding: 12px 0;
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--line), transparent 45%);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+.toc a span {
+  color: var(--teal);
+  font-variant-numeric: tabular-nums;
+}
+
+.toc a:hover {
+  color: var(--ink);
+}
+
+.article {
+  min-width: 0;
+  font-family: var(--serif);
+  font-size: 19px;
+  line-height: 1.68;
+}
+
+.article h2,
+.article h3,
+.article h4 {
+  font-family: var(--sans);
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.article h2 {
+  margin: 142px 0 30px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+  font-size: clamp(42px, 5vw, 68px);
+  font-weight: 680;
+}
+
+.article h2:first-child {
+  margin-top: 0;
+}
+
+.article h3 {
+  margin: 92px 0 24px;
+  font-size: clamp(28px, 3vw, 40px);
+  font-weight: 700;
+}
+
+.article h4 {
+  margin: 74px 0 22px;
+  color: var(--teal-dark);
+  font-size: 25px;
+  font-weight: 760;
+}
+
+.article p {
+  margin: 0 0 25px;
+}
+
+.article strong {
+  font-family: var(--sans);
+  font-size: 0.93em;
+  font-weight: 750;
+}
+
+.article em {
+  color: #414a47;
+}
+
+.article a {
+  color: var(--teal-dark);
+  text-decoration-color: #91bbb5;
+  text-underline-offset: 3px;
+}
+
+.article ol,
+.article ul {
+  margin: 24px 0 34px;
+  padding-left: 27px;
+}
+
+.article li {
+  margin: 12px 0;
+  padding-left: 7px;
+}
+
+.article li::marker {
+  color: var(--teal);
+  font-family: var(--sans);
+  font-weight: 800;
+}
+
+.article #references + ol {
+  list-style-type: decimal-leading-zero;
+}
+
+.article #references + ol li {
+  margin-bottom: 14px;
+  padding-left: 8px;
+}
+
+.article a.citation {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.article hr {
+  width: 80px;
+  height: 4px;
+  margin: 100px 0;
+  border: 0;
+  background: var(--teal);
+}
+
+.article figure,
+.article .table-shell,
+.article .comparison,
+.article .method-comparison {
+  width: min(1120px, calc(100vw - 48px));
+  margin: 54px 0 64px;
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+
+.article figure {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.article picture,
+.article img {
+  display: block;
+}
+
+.article img {
+  width: 100% !important;
+  height: auto !important;
+  max-height: 700px;
+  object-fit: contain;
+}
+
+.article video {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: min(72vh, 700px) !important;
+  border-radius: 8px;
+  background: #081311 !important;
+  object-fit: contain;
+}
+
+.article video.portrait-video {
+  width: auto !important;
+  height: min(72vh, 700px) !important;
+  max-width: 100% !important;
+  margin: 0 auto;
+}
+
+.article figure.portrait-video-figure {
+  width: min(520px, calc(100vw - 48px));
+  padding: 14px;
+}
+
+.article figure.toc-safe-figure,
+.article .comparison[data-toc-safe="true"] {
+  width: 100%;
+  margin-left: 0;
+  transform: none;
+}
+
+.article figure.portrait-video-figure .portrait-video {
+  width: auto !important;
+  height: min(72vh, 700px) !important;
+  max-width: 100% !important;
+  margin: 0 auto;
+}
+
+.autonomous-video-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #081311;
+}
+
+.autonomy-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 6px;
+  background: rgba(8, 56, 50, 0.94);
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+  pointer-events: none;
+}
+
+.article figcaption {
+  padding: 14px 4px 2px;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.hero-media figcaption {
+  padding: 14px 4px 2px;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.hero-media figcaption strong,
+.article figcaption strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.article .method-comparison > figcaption,
+.article .architecture-comparison > figcaption {
+  grid-column: 1 / -1;
+}
+
+.article .comparison {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px !important;
+  align-items: stretch !important;
+}
+
+.article .comparison figure {
+  width: 100%;
+  margin: 0;
+  transform: none;
+}
+
+.article .comparison figcaption {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: none;
+}
+
+.article .architecture-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  padding: 18px;
+  text-align: left;
+}
+
+.article .architecture-comparison > article {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 16px;
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f7f4ec;
+  font-family: var(--sans);
+}
+
+.article .architecture-comparison > .architecture-yact {
+  border: 2px solid var(--teal);
+  background: #eaf6f2;
+  box-shadow: 0 12px 28px rgba(0, 121, 105, 0.14);
+}
+
+.article .architecture-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.article .architecture-title h3 {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: -0.03em;
+}
+
+.article .architecture-title span {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: white;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.article .architecture-yact .architecture-title span {
+  background: var(--teal);
+}
+
+.article .architecture-flow {
+  display: grid;
+  justify-items: stretch;
+  gap: 7px;
+  align-content: center;
+}
+
+.article .architecture-flow b,
+.article .architecture-flow em {
+  padding: 11px 13px;
+  border: 1px solid #d9d4c8;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+  font-style: normal;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.article .architecture-flow i {
+  color: var(--teal);
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+}
+
+.article .architecture-flow em {
+  border-color: rgba(0, 121, 105, 0.35);
+  color: var(--teal);
+  font-weight: 800;
+}
+
+.article .architecture-limit,
+.article .architecture-good {
+  margin: 0;
+  padding: 12px 13px;
+  border-left: 4px solid #b4483f;
+  background: #f8e9e5;
+  color: #923b34;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.article .architecture-good {
+  border-left-color: var(--teal);
+  background: rgba(255, 255, 255, 0.62);
+  color: #087867;
+}
+
+.article .method-comparison {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 12px;
+  text-align: left;
+}
+
+.article .method-card {
+  min-width: 0;
+  padding: 15px 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #f7f4ec;
+  font-family: var(--sans);
+}
+
+.article .method-panel-label {
+  color: var(--teal);
+  font-size: 0.72em;
+  font-weight: 900;
+}
+
+.article .method-card-yact {
+  border: 2px solid var(--teal);
+  background: #eaf6f2;
+  box-shadow: 0 12px 28px rgba(0, 121, 105, 0.14);
+}
+
+.article .method-card h3 {
+  margin: 0;
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+
+.article .method-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.article .method-title span {
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--teal);
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.article .method-card > img {
+  width: 100% !important;
+  height: 210px !important;
+  margin: 10px 0 12px;
+  object-fit: contain;
+}
+
+.article .method-inputs {
+  display: grid;
+  gap: 4px;
+  min-height: 48px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.article .method-inputs-good {
+  color: #087867;
+}
+
+.article .method-capabilities {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 5px;
+  margin: 13px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.article .method-capabilities li {
+  position: relative;
+  margin: 0;
+  padding: 0 0 0 14px;
+}
+
+.article .method-capabilities li::before {
+  position: absolute;
+  left: 0;
+  content: "●";
+}
+
+.article .method-capabilities .can {
+  color: #087867;
+}
+
+.article .method-capabilities .maybe {
+  color: #b07800;
+}
+
+.article .method-capabilities .cannot {
+  color: #b4483f;
+}
+
+.table-shell {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.table-caption {
+  margin: 0;
+  padding: 14px 18px 18px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.table-caption strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.table-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: max-content;
+  max-width: 100%;
+  padding: 4px 7px;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.status-chip::before {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+}
+
+.status-good {
+  background: #e4f4ee;
+  color: #087867;
+}
+
+.status-partial {
+  background: #fff1c9;
+  color: #9a6800;
+}
+
+.status-bad {
+  background: #f7e5e1;
+  color: #a13f36;
+}
+
+.latency-indicator {
+  display: grid;
+  grid-template-columns: 40px auto;
+  align-items: center;
+  gap: 2px 7px;
+  width: max-content;
+  font-family: var(--sans);
+  line-height: 1;
+}
+
+.latency-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+}
+
+.latency-bar i {
+  height: 6px;
+  border-radius: 999px;
+  background: #d8d3c8;
+}
+
+.latency-good .latency-bar i:first-child {
+  background: #15947f;
+}
+
+.latency-partial .latency-bar i:nth-child(-n + 2) {
+  background: #d79a14;
+}
+
+.latency-bad .latency-bar i {
+  background: #bd5147;
+}
+
+.latency-indicator b {
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.latency-good b {
+  color: #087867;
+}
+
+.latency-partial b {
+  color: #9a6800;
+}
+
+.latency-bad b {
+  color: #a13f36;
+}
+
+.latency-indicator em {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.article td .latency-indicator ~ .status-chip {
+  display: flex;
+  margin-top: 4px;
+}
+
+.article table {
+  width: 100%;
+  min-width: 1080px;
+  border-collapse: collapse;
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.article th,
+.article td {
+  padding: 13px 14px;
+  border-bottom: 1px solid #dedacf;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.article th {
+  position: sticky;
+  top: 0;
+  background: var(--ink);
+  color: white;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.article th:last-child,
+.article td:last-child {
+  background: var(--teal-soft);
+  color: var(--teal-dark);
+  font-weight: 800;
+}
+
+.article tr:last-child td {
+  border-bottom: 0;
+}
+
+.equation {
+  width: min(100%, 720px);
+  margin: 46px 0;
+  padding: 28px;
+  overflow-x: auto;
+  border: 1px solid #a8cec8;
+  border-radius: 10px;
+  background: var(--teal-soft);
+  color: var(--teal-dark);
+  font-family: "STIX Two Math", "Cambria Math", serif;
+  font-size: clamp(24px, 4vw, 38px);
+  text-align: center;
+}
+
+.equation math {
+  display: block;
+  min-width: max-content;
+  color: inherit;
+  font: inherit;
+}
+
+.article pre {
+  margin: 38px 0;
+  padding: 28px;
+  overflow-x: auto;
+  border-radius: 10px;
+  background: var(--ink);
+  color: #e3f0ed;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.article code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+footer {
+  min-height: 250px;
+  padding: 54px clamp(24px, 5vw, 80px);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  gap: 30px;
+  background: var(--ink);
+  color: white;
+}
+
+footer > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+footer p {
+  margin: 0;
+  color: #9eb4b0;
+  font-family: var(--serif);
+}
+
+footer a {
+  justify-self: end;
+  color: #c7ddd9;
+  text-decoration: none;
+}
+
+@media (max-width: 1400px) and (min-width: 1281px) {
+  .toc {
+    transform: translateX(-90px);
+  }
+
+}
+
+@media (max-width: 1280px) {
+  .article-frame {
+    grid-template-columns: minmax(0, 760px);
+    justify-content: center;
+  }
+
+  .toc {
+    position: static;
+    transform: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 24px;
+  }
+
+  .toc p {
+    grid-column: 1 / -1;
+  }
+
+  .article .method-comparison {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .site-header {
+    grid-template-columns: 1fr auto;
+  }
+
+  .site-header nav {
+    display: none;
+  }
+
+  .article-frame {
+    grid-template-columns: minmax(0, 760px);
+    justify-content: center;
+  }
+
+  .toc {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 24px;
+  }
+
+  .toc p {
+    grid-column: 1 / -1;
+  }
+
+  .article .method-comparison {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  footer {
+    grid-template-columns: 1fr auto;
+  }
+
+  footer p {
+    display: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .site-header {
+    height: 64px;
+  }
+
+  .paper-link {
+    font-size: 11px;
+  }
+
+  .hero {
+    padding-top: 70px;
+  }
+
+  .hero h1 {
+    font-size: clamp(52px, 17vw, 82px);
+  }
+
+  .hero-media {
+    min-height: 260px;
+    border-radius: 12px;
+  }
+
+  .article-frame {
+    width: min(100% - 34px, 760px);
+    padding-top: 55px;
+  }
+
+  .toc {
+    grid-template-columns: 1fr;
+  }
+
+  .article {
+    font-size: 18px;
+  }
+
+  .article h2 {
+    margin-top: 105px;
+    font-size: 43px;
+  }
+
+  .article .comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .article .architecture-comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .article .method-comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .article figure {
+    padding: 9px;
+  }
+
+  .article video.portrait-video {
+    height: min(68vh, 610px) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .progress-value {
+    transition: none;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <div class="progress-track" aria-hidden="true"><div class="progress-value"></div></div>
+  <header class="site-header">
+    <a class="wordmark" href="#top" aria-label="YaCT home"><span class="wordmark-mark">Y</span><span>YaCT</span></a>
+    <nav aria-label="Article navigation">
+      <a href="#how-yact-works">Method</a>
+      <a href="#capabilities">Capabilities</a>
+      <a href="#comparison-with-prior-whole-body-controllers">Comparison</a>
+    </nav>
+    <a class="paper-link" href="https://arxiv.org/abs/2506.08931" target="_blank" rel="noreferrer">Related work: CLONE ↗</a>
+  </header>
+  <main id="top">
+    <section class="hero">
+      <div class="hero-kicker"><span>Research</span><span>Whole-body control</span><span>2026</span></div>
+      <h1>YaCT: Yet Another Closed-loop Teleoperation</h1>
+      <p class="hero-subtitle">A closed-loop, whole-body teleoperation policy for humanoid robots — driven by velocity targets for the head and two wrists.</p>
+      <div class="hero-facts" aria-label="Key properties"><span>3 targets</span><span>Single-stage transformer</span><span>Closed loop</span></div>
+      <figure class="hero-media">
+        <picture>
+          <source srcset="media/figure-1-overview.webp" type="image/webp">
+          <img src="media/figure-1-overview.jpg" alt="YaCT operator and humanoid robot connected through a sparse three-target interface">
+        </picture>
+        <figcaption><strong>Figure 1 — YaCT overview.</strong> A human operator controls the full humanoid through velocity targets for the head and two wrists.</figcaption>
+      </figure>
+    </section>
+    <div class="article-frame">
+      <aside class="toc" aria-label="On this page">
+        <p>On this page</p>
+        <a href="#the-problem"><span>01</span>The problem</a>
+        <a href="#yact-on-hardware"><span>02</span>YaCT on hardware</a>
+        <a href="#how-yact-works"><span>03</span>How YaCT works</a>
+        <a href="#capabilities"><span>04</span>Capabilities</a>
+        <a href="#from-teleop-to-autonomy"><span>05</span>Teleop to autonomy</a>
+        <a href="#comparison-with-prior-whole-body-controllers"><span>06</span>Prior work</a>
+        <a href="#limitations-next-steps"><span>07</span>Limitations</a>
+        <a href="#authors"><span>08</span>Authors</a>
+        <a href="#references"><span>09</span>References</a>
+      </aside>
+      <article class="article">
+<h2 id="abstract">Abstract</h2>
+<p>Whole-body humanoid teleoperation must cover a wide range of tasks — from locomotion and crouching to precise manipulation and forceful interaction — without burdening a human operator or an autonomous policy with complex low-level commands. Meeting both goals is difficult: compact interfaces can sacrifice precise, stable control, while hierarchical systems can preserve a compact command interface but add a planning stage whose latency and computational cost depend on the implementation. We present <strong>YaCT</strong> (Yet Another Closed-loop Teleoperation), a single policy that covers a broad task range while controlling the full humanoid from linear and angular velocity targets for the head and two wrists. YaCT observes how the robot actually moves in the world and uses this feedback to correct positioning errors and adapt its whole-body response when the environment resists. To obtain natural yet robust behavior, we first learn a broad motion prior from human motion data, transfer it to a deployable policy under realistic observations, and then refine it using reinforcement learning for accurate and smooth task execution. Hardware demonstrations show one policy performing locomotion, low-height manipulation, precise positioning, and loaded-object pulling. Its compact interface can be driven by an operator wearing a VR headset or by a vision–language–action policy.</p>
+<hr>
+<h2 id="the-problem">The problem</h2>
+<p>The challenge is not any individual behavior, but satisfying four control requirements at the same time:</p>
+<ol>
+<li><strong>A convenient, minimal interface.</strong> A standard VR headset and two controllers track the poses of the head and wrists, from which the interface derives three Cartesian velocity targets. Additional trackers or command modalities can make teleoperation harder to set up and use, and can complicate integration with an autonomous upper-level policy.</li>
+<li><strong>Coordinated whole-body control.</strong> Sparse task-space targets must be translated into joint-level motion across the legs, torso, and arms while the controller continuously maintains balance; this coordination should not be delegated to the operator.</li>
+<li><strong>Forceful interaction under resistance.</strong> When a load resists, the robot may not move as far as the operator commands. A useful controller must turn the continuing command into a stronger whole-body pulling response while maintaining balance, rather than simply replaying the requested motion.</li>
+<li><strong>Precision.</strong> Two different kinds matter. The first is end-effector precision while the base remains stationary — enough, for example, to align a hand with a small button. The second is precise <em>incremental base positioning</em>: if the operator commands the base three centimeters forward, it should travel three centimeters and then stop. This requires the controller to maintain an internal estimate of the remaining world-frame displacement and correct it to zero.</li>
+</ol>
+<p>These requirements motivate a policy that maps a compact task-space command to stable whole-body control while observing the robot's displacement in the world.</p>
+<hr>
+<h2 id="yact-on-hardware">YaCT on hardware</h2>
+<p>YaCT addresses these requirements with a single end-to-end policy that turns head and wrist velocity targets into coordinated full-body motion. The upper level specifies how the head and wrists should move; YaCT controls every joint, coordinates locomotion, and maintains balance.</p>
+<p>In the clip below, one policy walks the robot forward, lowers the body, and picks up an object. The sequence requires coordinated motion of the legs, torso, and arms while the same policy maintains balance.</p>
+<figure class="portrait-video-figure">
+  <video class="portrait-video" src="media/video-01-whole-body-teleop.mp4" data-autoplay preload="metadata" muted loop playsinline controls></video>
+  <figcaption><strong>Video 1 — YaCT whole-body teleoperation.</strong> One operator, one policy, all joints.</figcaption>
+</figure>
+<hr>
+<h2 id="how-yact-works">How YaCT works</h2>
+<p>At a high level, YaCT is a single end-to-end transformer that maps</p>
+<p><strong>(head + wrist velocity targets + robot proprioception + odometry) → joint commands</strong></p>
+<p>for all actuated joints at <strong>50 Hz</strong>.</p>
+<figure class="toc-safe-figure">
+  <picture>
+    <img src="media/figure-2-interface.webp" alt="YaCT policy I/O block diagram: head and wrist velocity targets, proprioception, and odometry feed a Transformer that emits joint commands, with a closed-loop feedback arrow" style="height: 400px; width: auto; max-width: 100%; display: inline-block;" />
+  </picture>
+  <figcaption><strong>Figure 2 — YaCT input–output interface.</strong> Linear and angular velocity targets for the head and two wrists, together with proprioception and odometry, feed one Transformer that emits full-body joint commands.</figcaption>
+</figure>
+<p>The operator-facing interface is deliberately minimal: a standard VR setup provides head and wrist poses, from which the interface computes linear and angular velocities. <strong>Only these head and wrist velocities are passed to the low-level YaCT policy; the VR poses themselves are not.</strong> Internally, YaCT integrates the commanded velocities and combines them with odometry to maintain an estimate of the remaining world-frame displacement. This internal signal closes the feedback loop but is not part of the external operator interface. The policy infers the motion of the feet, hips, and spine while maintaining balance. An autonomous upper-level policy can produce the same velocity commands, as discussed in <a href="#from-teleop-to-autonomy" target="_blank" rel="noreferrer">From teleop to autonomy</a>. Throughout this article, we use <em>hand targets</em> as a more intuitive name for the two technical wrist targets.</p>
+<p>The policy is trained in three stages.</p>
+<figure class="toc-safe-figure">
+  <picture>
+    <img src="media/figure-3-training.webp" alt="Three-stage training overview: domain randomization spans Teacher, Student distillation, and RL fine-tuning" style="height: 400px; width: auto; max-width: 100%; display: inline-block;" />
+  </picture>
+  <figcaption><strong>Figure 3 — Three-stage YaCT training pipeline.</strong> A privileged Teacher is distilled into a realistic Student and then refined with PPO.</figcaption>
+</figure>
+<h3 id="stage-1-teacher-mocap-supervised-privileged-state">Stage 1 — Teacher (mocap-supervised, privileged state)</h3>
+<p>The teacher is trained in an idealized simulator with <strong>privileged state</strong> — full joint targets, body-part positions, no observation noise, no occlusions, and the sampled domain-randomization state that defines the current simulated dynamics. Supervision from human motion-capture data provides human-like whole-body motion, while dense rewards are used to stabilize training.</p>
+<p>Two design choices are particularly important here. First, the teacher trains under <strong>the same domain randomization</strong> the student will later face — mass, friction, damping, motor characteristics, external perturbations, and so on. Second, the corresponding randomization parameters are part of the teacher's observation. The teacher therefore does not have to learn one action that works for an average environment: it can adapt its action to the particular dynamics sampled for the current episode. During DAgger, this provides dynamics-conditioned action labels at the states visited by the student. The student never receives the randomization state directly; it has to infer its effects from realistic observations and history. Shared randomization and privileged conditioning provide stable supervision across the randomized dynamics encountered during student training. The teacher is never deployed on the real robot; it serves as a robust source of supervision for the student.</p>
+<h3 id="stage-2-student-dagger-distilled-sparse-3-target-input">Stage 2 — Student (DAgger-distilled, sparse 3-target input)</h3>
+<p>The student is the deployable policy used on the real robot. It sees only realistic inputs: a long history of noisy proprioception, base state from odometry, and linear and angular velocity targets for the head and two wrists. No privileged information. No future look-ahead. No dense per-joint targets and no task-space targets for body parts beyond the head and wrists.</p>
+<p>That sparsity is a deliberate design decision and a central interface choice in YaCT. It has three consequences:</p>
+<ul>
+<li><strong>Convenient teleoperation.</strong> The operator only needs a standard VR setup — headset + two controllers — with no full-body mocap suit, ankle IMUs, additional buttons, or foot pedals.</li>
+<li><strong>A stable abstraction boundary.</strong> The upper level, whether a person or a VLA, produces the same Cartesian targets while YaCT remains the unchanged low-level runtime.</li>
+<li><strong>Room for new locomotion behaviors.</strong> Keeping leg motion internal allows new locomotion behaviors to be investigated by expanding training coverage without necessarily changing the interface.</li>
+</ul>
+<p>We distill the teacher into the student with <strong>DAgger</strong> <a class="citation" href="https://arxiv.org/abs/1011.0686" target="_blank" rel="noreferrer">[5]</a>: the student acts, the teacher provides an action label at the states visited by the student, and we train on those labels. This mitigates the distribution shift of naive behavior cloning. Throughout training — teacher, distillation, and RL fine-tune — we also apply a lightweight trajectory-difficulty curriculum, upsampling the harder motions relative to their frequency in the raw motion corpus.</p>
+<h3 id="why-teacher-student-alone-is-not-enough">Why teacher–student alone is not enough</h3>
+<p>At the end of Stage 2, the student is optimized to match teacher actions on the visited state distribution. This imitation objective does not directly minimize task-space tracking error, so matching the teacher and satisfying the operator's command can diverge under contacts and out-of-distribution inputs. Two failure modes appear immediately on the real robot:</p>
+<ol>
+<li><strong>Weak out-of-distribution behavior.</strong> States outside the distillation distribution — a novel contact, a different friction coefficient, or an unusual sequence of operator targets — can lead to jittery or inaccurate actions.</li>
+<li><strong>No direct target-tracking objective.</strong> Matching teacher actions and minimizing command-tracking error are correlated but not identical, especially under contact and near the edge of the training distribution.</li>
+</ol>
+<p>We therefore add a third stage: RL fine-tuning of the student with the operator's targets as the reward signal.</p>
+<h3 id="stage-3-rl-fine-tuning">Stage 3 — RL fine-tuning</h3>
+<p>We continue training the student with Proximal Policy Optimization (PPO) <a class="citation" href="https://arxiv.org/abs/1707.06347" target="_blank" rel="noreferrer">[6]</a>, rewarding:</p>
+<ul>
+<li><strong>Tracking</strong> — the robot's head and wrist motion should follow the commanded target trajectories,</li>
+<li><strong>Smoothness</strong> — action rate and jerk are penalized so we don't trade smooth motion for a marginal tracking gain.</li>
+</ul>
+<p>The reward is deliberately minimal. No hand-crafted gait rewards, no per-joint shaping — just "follow the target, stay smooth". Everything else is inherited from the distilled prior.</p>
+<p>To stabilize fine-tuning, we retain a <strong>decaying DAgger loss</strong> on top of the RL objective:</p>
+<div class="equation" role="math" aria-label="L equals L RL plus lambda of t times L DAgger; lambda of t decreases to zero">
+    <math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+      <mrow>
+        <mi>ℒ</mi><mo>=</mo>
+        <msub><mi>ℒ</mi><mtext>RL</mtext></msub>
+        <mo>+</mo>
+        <mi>λ</mi><mo>(</mo><mi>t</mi><mo>)</mo>
+        <msub><mi>ℒ</mi><mtext>DAgger</mtext></msub>
+        <mo>,</mo><mspace width="1.2em"></mspace>
+        <mi>λ</mi><mo>(</mo><mi>t</mi><mo>)</mo><mo>↘</mo><mn>0</mn>
+      </mrow>
+    </math>
+  </div>
+<p>Early in fine-tuning, DAgger dominates and keeps the policy near the well-behaved region learned during distillation. As λ(t) decays, RL places increasing weight on direct target satisfaction while reducing degradation of the learned motion prior.</p>
+<p>The full sim-to-real result depends on several cumulative engineering improvements on top of this recipe:</p>
+<ul>
+<li><strong>Sim-to-real reduction:</strong> we emulate inference latency inside the simulator and randomize joint dynamics (friction, damping, delays), so the policy is trained on variations representative of deployment conditions.</li>
+<li><strong>Synthetic coverage of underrepresented motions:</strong> our motion-capture data contains limited examples of motions such as sideways walking, so we generate these trajectories automatically with a simple locomotion policy. For a subset of trajectories, we also randomize arm positions to broaden upper-body coverage.</li>
+<li><strong>Training scale and optimization:</strong> more careful PPO base parameters, a better mix of distillation and PPO, longer training, and scaling up to 8 GPUs.</li>
+</ul>
+<h3 id="what-mattered-in-training">What mattered in training</h3>
+<p>In our training runs, performance was sensitive to several dimensions of scale and optimization:</p>
+<ul>
+<li><strong>Data volume.</strong> More trajectories expose the policy to a larger set of motion transitions.</li>
+<li><strong>Data diversity.</strong> Hand poses, side-stepping, squats, and contact configurations need to be represented in the training distribution; states outside that distribution remain less reliable.</li>
+<li><strong>Model capacity.</strong> Insufficient model capacity saturates as the motion distribution becomes more diverse.</li>
+<li><strong>Temporal architecture.</strong> Given the same observation history, the Transformer consistently outperformed the MLP baseline in our training runs, suggesting that the more flexible temporal model better fits the diverse motion distribution.</li>
+<li><strong>Optimization schedule.</strong> Warmup, learning-rate decay, and the balance between DAgger and RL affected final performance.</li>
+</ul>
+<hr>
+<h2 id="capabilities">Capabilities</h2>
+<p>The clips below are all the same YaCT policy — no per-task tuning, no switching between controllers.</p>
+<p><strong>Whole-body coordination.</strong> Picking an object up from the floor is not an arm-only motion: the robot has to lower its body, bend and reach, keep its balance through contact, secure the object, and stand back up. YaCT coordinates the full sequence with the same policy used for every other capability below.</p>
+<figure class="portrait-video-figure">
+  <video class="portrait-video" src="media/video-02-floor-pickup.mp4" data-autoplay preload="metadata" muted loop playsinline controls></video>
+  <figcaption><strong>Video 2 — Picking an object up from the floor.</strong> A single policy coordinates the legs, torso, balance, and arms throughout the motion.</figcaption>
+</figure>
+<p><strong>Reaching precisely.</strong> Sparse targets do not mean coarse control — the operator can align the end-effectors at fine scale when the task calls for it.</p>
+<figure>
+  <video src="media/video-03-precise-reaching.mp4" data-autoplay preload="metadata" muted loop playsinline controls style="height: 400px; width: auto; max-width: 100%; display: block; background: #000;"></video>
+  <figcaption><strong>Video 3 — Precise reaching.</strong> Fine end-effector alignment under teleoperation.</figcaption>
+</figure>
+<p><strong>Dynamics.</strong> The policy handles the perturbations shown below without falling over. We attribute part of this robustness to the RL fine-tune.</p>
+<figure>
+  <video src="media/video-04-dynamic-balance.mp4" data-autoplay preload="metadata" muted loop playsinline controls style="height: 400px; width: auto; max-width: 100%; display: block; background: #000;"></video>
+  <figcaption><strong>Video 4 — Dynamic balance.</strong> The policy handles perturbations without losing balance.</figcaption>
+</figure>
+<p><strong>Latency.</strong> A frame-by-frame comparison of the recorded operator and robot motion in Video 5 gives an approximately 100 ms end-to-end latency estimate for this hardware configuration.</p>
+<figure>
+  <video src="media/video-05-latency.mp4" data-autoplay preload="metadata" muted loop playsinline controls style="height: 400px; width: auto; max-width: 100%; display: block; background: #000;"></video>
+  <figcaption><strong>Video 5 — End-to-end responsiveness.</strong> From VR target motion to visible robot response.</figcaption>
+</figure>
+<hr>
+<h2 id="from-teleop-to-autonomy">From teleop to autonomy</h2>
+<p>YaCT's compact task-space interface can serve both as a data-collection boundary for autonomous policies and as their low-level runtime. The pipeline is straightforward:</p>
+<ol>
+<li>Use YaCT to collect teleoperated demonstrations (observations + derived head and wrist velocity commands over time).</li>
+<li>Train a VLA (vision-language-action) policy to output velocity commands for only three task-space points: the head and two wrists.</li>
+<li>Connect that VLA to YaCT at inference time. The same low-level whole-body controller is reused unchanged.</li>
+</ol>
+<p>The key point is that steps 1–3 share the same interface. Nothing in the low-level stack changes when the operator is replaced by a VLA; the YaCT policy is agnostic to the source of the targets.</p>
+<figure class="toc-safe-figure">
+  <picture>
+    <source srcset="media/figure-4-teleop-to-autonomy.webp" type="image/webp">
+    <img src="media/figure-4-teleop-to-autonomy.jpg" alt="Two parallel pipelines: VR motion and a VLA produce three head-and-wrist velocity commands for the same low-level YaCT runtime" style="height: 400px; width: auto; max-width: 100%; display: inline-block;" />
+  </picture>
+  <figcaption><strong>Figure 4 — One upper-level interface for teleoperation and autonomy.</strong> The upper-level action contains only three target velocities — for the head and two wrists — derived from VR motion or generated by a VLA.</figcaption>
+</figure>
+<p>In the rollout below, a VLA drives YaCT without teleoperation.</p>
+<figure class="toc-safe-figure autonomous-video-figure">
+  <div class="autonomous-video-frame">
+    <span class="autonomy-badge">Fully autonomous</span>
+    <video src="media/video-06-autonomous-vla.mp4" aria-label="Fully autonomous execution with VLA and YaCT" data-autoplay preload="metadata" muted loop playsinline controls></video>
+  </div>
+  <figcaption><strong>Video 6 — Fully autonomous execution with VLA and YaCT.</strong> A VLA generates head and wrist velocity commands while YaCT coordinates whole-body motion and balance.</figcaption>
+</figure>
+<hr>
+<h2 id="comparison-with-prior-whole-body-controllers">Comparison with prior whole-body controllers</h2>
+<p>The comparison below separates two questions: what each controller consumes, and what the resulting system can do. It combines capabilities reported in the cited papers with qualitative observations from our deployments; it is not a controlled cross-platform benchmark.</p>
+<h3 id="interface-and-capability-overview">Interface and capability overview</h3>
+<p>In the configurations evaluated here, none of the baseline families combines all four properties from the problem statement:</p>
+<ul>
+<li><strong>Pure IK / heuristic controllers</strong> — represented here by Open-TeleVision-style XR teleoperation <a class="citation" href="https://arxiv.org/abs/2407.01512" target="_blank" rel="noreferrer">[2]</a> — provide direct arm control with a compact interface, but do not coordinate the lower body or close the loop with world-frame displacement.</li>
+<li><strong>AMO-family</strong> <a class="citation" href="https://arxiv.org/abs/2505.03738" target="_blank" rel="noreferrer">[3]</a> receives head and hand poses together with a separate base-velocity command. Its optimization-based upper policy computes torso orientation and base-height commands internally for the lower-body policy. This supports squatting and bending, but does not provide precise closed-loop base positioning under sustained contact.</li>
+<li><strong>SONIC version 1.1</strong> <a class="citation" href="https://arxiv.org/abs/2511.07820" target="_blank" rel="noreferrer">[4]</a> provides learned whole-body tracking and broad motion coverage. Its low-level tracker consumes a dense whole-body reference and can be paired with a separate kinematic planner that converts higher-level commands into such a reference. In the configuration evaluated here, the remaining world-frame displacement is not returned to the planner.</li>
+<li><strong>CLONE</strong> <a class="citation" href="https://arxiv.org/abs/2506.08931" target="_blank" rel="noreferrer">[1]</a> introduced the sparse three-target interface and closed-loop world-frame correction that inspired YaCT. The official-repository deployment shown below retains limitations in locomotion consistency, movement latency, and steadiness for our target scenarios.</li>
+</ul>
+<figure class="method-comparison" aria-label="Comparison of whole-body controller interfaces">
+  <div class="method-card">
+    <h3><span class="method-panel-label">(a)</span> XR / IK</h3>
+    <img src="media/figure-5a-xr-ik.webp" alt="XR and IK: hand targets and a base velocity command" />
+    <div class="method-inputs"><span>hands + base velocity</span><span>separate locomotion command</span></div>
+  </div>
+  <div class="method-card">
+    <h3><span class="method-panel-label">(b)</span> AMO-like</h3>
+    <img src="media/figure-5b-amo.webp" alt="AMO-like operator input: head and hand poses with a separate base-velocity command" />
+    <div class="method-inputs"><span>head + hands + base velocity</span><span>torso commands computed internally</span></div>
+  </div>
+  <div class="method-card">
+    <h3><span class="method-panel-label">(c)</span> SONIC v1.1 tracker</h3>
+    <img src="media/figure-5c-sonic.webp" alt="SONIC version 1.1 low-level tracker consuming a dense whole-body reference" />
+    <div class="method-inputs"><span>dense body reference</span><span>planner may be a separate module</span></div>
+  </div>
+  <div class="method-card method-card-yact">
+    <div class="method-title"><h3><span class="method-panel-label">(d)</span> CLONE / YaCT</h3><span>shared interface</span></div>
+    <img src="media/figure-5d-yact.webp" alt="CLONE and YaCT: a sparse three-point head-and-wrist interface" />
+    <div class="method-inputs method-inputs-good"><span>head + two wrists</span><span>minimal 3-point interface</span></div>
+  </div>
+  <figcaption><strong>Figure 5 — Controller interfaces.</strong> Inputs consumed by XR / IK, AMO-like, the SONIC v1.1 low-level tracker, and the sparse CLONE / YaCT controller interface. A separate planner may convert compact intent into the dense reference consumed by SONIC. Capabilities are summarized separately in Table 1.</figcaption>
+</figure>
+<div class="table-shell"><table><thead><tr><th>Requirement</th><th>XR teleop</th><th>AMO-like</th><th>SONIC v1.1</th><th>CLONE</th><th><strong>YaCT</strong></th></tr></thead><tbody><tr><td>Controller-facing input</td><td>hands + base velocity</td><td>head + hands + base velocity</td><td>dense body reference</td><td>head + two wrists</td><td>head + two wrist velocities</td></tr><tr><td>Arm control</td><td><span class="status-chip status-good">Demonstrated</span></td><td><span class="status-chip status-good">Demonstrated</span></td><td><span class="status-chip status-good">Demonstrated</span></td><td><span class="status-chip status-good">Demonstrated</span></td><td><span class="status-chip status-good">Demonstrated</span></td></tr><tr><td>Locomotion</td><td><span class="status-chip status-good">Demonstrated</span></td><td><span class="status-chip status-good">Demonstrated</span></td><td><span class="status-chip status-good">Demonstrated</span></td><td><span class="status-chip status-partial">Inconsistent</span></td><td><span class="status-chip status-good">Demonstrated</span></td></tr><tr><td>Deep squat</td><td><span class="status-chip status-bad">Not demonstrated</span></td><td><span class="status-chip status-good">Demonstrated</span></td><td><span class="status-chip status-good">Demonstrated</span></td><td><span class="status-chip status-good">Demonstrated</span></td><td><span class="status-chip status-good">Demonstrated</span></td></tr><tr><td>Bend</td><td><span class="status-chip status-bad">Not demonstrated</span></td><td><span class="status-chip status-good">Demonstrated</span></td><td><span class="status-chip status-good">Demonstrated</span></td><td><span class="status-chip status-good">Demonstrated</span></td><td><span class="status-chip status-good">Demonstrated</span></td></tr><tr><td>World-frame correction</td><td><span class="status-chip status-bad">Unavailable</span></td><td><span class="status-chip status-bad">Unavailable</span></td><td><span class="status-chip status-bad">Absent in evaluated stack</span></td><td><span class="status-chip status-good">Available</span></td><td><span class="status-chip status-good">Available</span></td></tr><tr><td>Fine incremental base positioning</td><td><span class="status-chip status-bad">Not demonstrated</span></td><td><span class="status-chip status-bad">Not demonstrated</span></td><td><span class="status-chip status-bad">Not demonstrated</span></td><td><span class="status-chip status-partial">Latency-limited</span></td><td><span class="status-chip status-good">Demonstrated</span></td></tr><tr><td>Sustained pull under load</td><td><span class="status-chip status-bad">Not demonstrated</span></td><td><span class="status-chip status-bad">Not demonstrated</span></td><td><span class="status-chip status-bad">Not demonstrated</span></td><td><span class="status-chip status-partial">Difficult</span></td><td><span class="status-chip status-good">Demonstrated</span></td></tr><tr><td>Steadiness</td><td><span class="status-chip status-partial">Limited</span></td><td><span class="status-chip status-partial">Limited</span></td><td><span class="status-chip status-good">Demonstrated</span></td><td><span class="status-chip status-bad">Blocker</span></td><td><span class="status-chip status-good">Demonstrated in shown scenarios</span></td></tr><tr><td>Action latency</td><td><span class="latency-indicator latency-good" aria-label="Action latency: Low, 1 out of 3"><span class="latency-bar" aria-hidden="true"><i></i><i></i><i></i></span><b>1/3</b><em>Low</em></span></td><td><span class="latency-indicator latency-good" aria-label="Action latency: Low, 1 out of 3"><span class="latency-bar" aria-hidden="true"><i></i><i></i><i></i></span><b>1/3</b><em>Low</em></span></td><td><span class="latency-indicator latency-partial" aria-label="Action latency: Medium (combined stack), 2 out of 3"><span class="latency-bar" aria-hidden="true"><i></i><i></i><i></i></span><b>2/3</b><em>Medium (combined stack)</em></span></td><td><span class="latency-indicator latency-partial" aria-label="Action latency: Overall medium, 2 out of 3"><span class="latency-bar" aria-hidden="true"><i></i><i></i><i></i></span><b>2/3</b><em>Overall medium</em></span> <span class="status-chip status-good">Arms: low</span> <span class="status-chip status-bad">Movement: high</span></td><td><span class="latency-indicator latency-good" aria-label="Action latency: Low, 1 out of 3"><span class="latency-bar" aria-hidden="true"><i></i><i></i><i></i></span><b>1/3</b><em>Low</em></span></td></tr><tr><td>Compact upper-level modality</td><td><span class="status-chip status-good">Convenient</span></td><td><span class="status-chip status-bad">Extra modalities</span></td><td><span class="status-chip status-partial">Via separate planner</span></td><td><span class="status-chip status-good">Convenient</span></td><td><span class="status-chip status-good">Convenient</span></td></tr></tbody></table><p class="table-caption"><strong>Table 1 — Controller capability comparison.</strong><span>The table combines paper-reported capabilities with qualitative observations from our deployments; it is not a controlled cross-platform benchmark.</span><span class="table-legend"><span class="status-chip status-good">Demonstrated / favorable</span><span class="status-chip status-partial">Limited / mixed</span><span class="status-chip status-bad">Not demonstrated / blocker</span></span><span>For action latency, 1/3 is low, 2/3 medium, and 3/3 high; lower is better.</span></p></div>
+<p>The distinguishing point is not any single capability in isolation, but that YaCT satisfies these requirements simultaneously under one policy, without an additional planner or a larger operator interface.</p>
+<h3 id="from-clone-to-yact">From CLONE to YaCT</h3>
+<p>The sparse interface and world-frame closed loop both originate in CLONE <a class="citation" href="https://arxiv.org/abs/2506.08931" target="_blank" rel="noreferrer">[1]</a>. YaCT retains those ideas while changing four parts of the recipe: a Transformer backbone replaces the MLP + mixture-of-experts architecture; the motion corpus is expanded with additional motion-capture data and custom synthetic trajectories; domain randomization is broadened and tuned to the deployment distribution; and an RL fine-tuning stage follows teacher–student distillation.</p>
+<p>A CLONE deployment from the official repository is shown in Video 7. In this deployment, arm response is fast and heavy pulling is possible, but locomotion is inconsistent, movement response has high latency, and steadiness remains a practical limitation. These observations motivated the architecture and training changes above.</p>
+<figure class="portrait-video-figure">
+  <video class="portrait-video" src="media/video-07-clone.mp4" data-autoplay preload="metadata" muted loop playsinline controls></video>
+  <figcaption><strong>Video 7 — CLONE deployment from the official repository.</strong> Fast arm response is combined with high movement latency and limited steadiness.</figcaption>
+</figure>
+<h3 id="comparison-with-sonic-v1-1-in-our-experimental-stack">Comparison with SONIC v1.1 in our experimental stack</h3>
+<p>This section refers specifically to <strong>SONIC version 1.1</strong> <a class="citation" href="https://arxiv.org/abs/2511.07820" target="_blank" rel="noreferrer">[4]</a> and the official checkpoints used in our deployment. SONIC is a strong whole-body motion tracker. Our experimental system contains two separable components with different requirements: a <strong>180M planner</strong> maps compact intent to a dense full-body reference, while a low-level SONIC tracker — an <strong>11M encoder</strong> and <strong>38M decoder</strong>, <strong>49M parameters</strong> in total — maps that reference to robot motion. Either component can be used independently; the complete planner-plus-tracker stack evaluated here contains <strong>229M parameters</strong>. YaCT instead maps three global velocity targets directly to joint commands with a single <strong>9M Transformer</strong> and returns the robot's internally maintained world-frame displacement to that same policy. The observations below apply to this version 1.1 configuration rather than to every possible SONIC deployment.</p>
+<figure class="architecture-comparison" aria-label="Architecture comparison between the SONIC control stack and YaCT">
+  <article>
+    <div class="architecture-title"><h3>SONIC v1.1 stack</h3><span>180M + 49M</span></div>
+    <div class="architecture-flow"><b>Compact intent</b><i>↓</i><b>Separable planner · 180M</b><i>↓ dense body reference</i><b>Low-level tracker · 49M</b><i>↓</i><b>Robot motion</b></div>
+    <p class="architecture-limit">The planner and tracker can operate separately. In our combined stack, world-frame error is not returned to the planner.</p>
+  </article>
+  <article class="architecture-yact">
+    <div class="architecture-title"><h3>YaCT</h3><span>9M</span></div>
+    <div class="architecture-flow"><b>Head + two wrists</b><i>↓</i><b>YaCT Transformer · 9M</b><i>↓</i><b>Joint commands</b><em>↺ odometry + robot state</em></div>
+    <p class="architecture-good">Single-stage policy with world-frame feedback inside the loop.</p>
+  </article>
+  <figcaption><strong>Figure 6 — SONIC v1.1 control stack versus YaCT.</strong> The experimental stack combines a separable 180M planner with a 49M low-level SONIC tracker; YaCT uses a single-stage 9M closed-loop policy.</figcaption>
+</figure>
+<p>Three pairs of clips illustrate practical differences in response latency, global positioning, and sustained pulling under resistance.</p>
+<div class="comparison" data-toc-safe="true">
+  <figure>
+    <video class="portrait-video" src="media/video-08-sonic-latency.mp4" data-autoplay preload="metadata" muted loop playsinline controls></video>
+    <figcaption><strong>Video 8 — SONIC v1.1 response latency.</strong> SONIC v1.1 in our experimental stack.</figcaption>
+  </figure>
+  <figure>
+    <video src="media/video-09-yact-latency.mp4" data-autoplay preload="metadata" muted loop playsinline controls style="height: 400px; width: auto; max-width: 100%; display: block; background: #000;"></video>
+    <figcaption><strong>Video 9 — YaCT response latency.</strong> YaCT (ours).</figcaption>
+  </figure>
+</div>
+<p><em>Latency: frame-by-frame comparison of Videos 8 and 9 gives an estimate of approximately 400–500 ms for our SONIC v1.1 stack and approximately 100 ms for YaCT. These values are video-derived estimates rather than instrumented latency measurements.</em></p>
+<div class="comparison" data-toc-safe="true">
+  <figure>
+    <video class="portrait-video" src="media/video-10-sonic-drift.mp4" data-autoplay preload="metadata" muted loop playsinline controls></video>
+    <figcaption><strong>Video 10 — SONIC v1.1 global-position drift.</strong> Open-loop motion tracking in our experimental stack.</figcaption>
+  </figure>
+  <figure>
+    <video class="portrait-video" src="media/video-01-whole-body-teleop.mp4" data-autoplay preload="metadata" muted loop playsinline controls></video>
+    <figcaption><strong>Video 11 — YaCT closed-loop positioning.</strong> YaCT (ours) corrects the internally maintained world-frame displacement.</figcaption>
+  </figure>
+</div>
+<p><em>Global movement accuracy: an open-loop tracker can reproduce a plausible motion without reaching the intended position in the world. YaCT instead integrates the incoming velocity commands and combines them with odometry to maintain the remaining world-frame displacement internally, continuing until that error is corrected. These clips illustrate the difference between open-loop motion reproduction and closed-loop correction; they are not a matched quantitative trial.</em></p>
+<div class="comparison" data-toc-safe="true">
+  <figure>
+    <video class="portrait-video" src="media/video-12-sonic-rover-pull.mp4" data-autoplay preload="metadata" muted loop playsinline controls></video>
+    <figcaption><strong>Video 12 — SONIC v1.1 rover pull.</strong> Pulling a loaded rover in our experimental stack.</figcaption>
+  </figure>
+  <figure>
+    <video src="media/video-13-yact-rover-pull.mp4" data-autoplay preload="metadata" muted loop playsinline controls style="height: 400px; width: auto; max-width: 100%; display: block; background: #000;"></video>
+    <figcaption><strong>Video 13 — YaCT rover pull.</strong> YaCT (ours) produces a stronger pulling response as its internal world-frame displacement grows.</figcaption>
+  </figure>
+</div>
+<p><em>Sustained pulling under resistance: when the wrist velocity command persists while the load resists and measured motion remains small, YaCT's internal world-frame displacement grows. The policy uses this internal signal to produce a stronger pulling response while coordinating balance as the robot begins to move.</em></p>
+<hr>
+<h2 id="limitations-next-steps">Limitations &amp; next steps</h2>
+<ul>
+<li><strong>Residual instability.</strong> The policy remains vulnerable to some out-of-distribution motions, contacts, and recovery situations. Improving stability in these cases is a priority.</li>
+<li><strong>More human-like gait.</strong> The current locomotion prioritizes stability and target tracking over natural walking style. Future training will place greater emphasis on human-like gait patterns.</li>
+<li><strong>No explicit leg targets.</strong> The operator does not directly command the feet: locomotion emerges from head and hand targets together with odometry. This keeps the interface compact, but can be limiting when a task requires a specific foot placement. An optional leg-target channel is a natural extension.</li>
+<li><strong>Single-embodiment policy.</strong> The current YaCT policy is trained for one humanoid platform. Evaluating the same recipe on other humanoid embodiments is a next step.</li>
+<li><strong>VLA integration and scaling.</strong> The shared interface is designed to accept targets from a VLA while keeping the YaCT controller fixed. Current work evaluates this integration across broader task distributions and richer language conditioning.</li>
+<li><strong>Stair climbing and other locomotion primitives.</strong> We plan to investigate these skills by expanding training coverage while keeping the operator interface unchanged.</li>
+</ul>
+<hr>
+<h2 id="authors">Authors</h2>
+<p>The following authors have created the source code of "YaCT" published and distributed by YANDEX LLC as the owner:</p>
+<ul>
+<li>Andrei Manoshin <a href="mailto:amanoshin@yandex-team.ru" target="_blank" rel="noreferrer">amanoshin@yandex-team.ru</a></li>
+<li>Ivan Kabir <a href="mailto:slontus@yandex-team.ru" target="_blank" rel="noreferrer">slontus@yandex-team.ru</a></li>
+<li>Mikhail Korobkin <a href="mailto:m1khailk@yandex-team.ru" target="_blank" rel="noreferrer">m1khailk@yandex-team.ru</a></li>
+<li>Dmitrii Movchan <a href="mailto:dmvch@yandex-team.ru" target="_blank" rel="noreferrer">dmvch@yandex-team.ru</a></li>
+</ul>
+<hr>
+<h2 id="references">References</h2>
+<ol>
+<li>Li et al. CLONE: Closed-Loop Whole-Body Humanoid Teleoperation for Long-Horizon Tasks. <a href="https://arxiv.org/abs/2506.08931" target="_blank" rel="noreferrer">arXiv:2506.08931</a>, 2025.</li>
+<li>Cheng et al. Open-TeleVision: Teleoperation with Immersive Active Visual Feedback. <a href="https://arxiv.org/abs/2407.01512" target="_blank" rel="noreferrer">arXiv:2407.01512</a>, 2024.</li>
+<li>Li et al. AMO: Adaptive Motion Optimization for Hyper-Dexterous Humanoid Whole-Body Control. <a href="https://arxiv.org/abs/2505.03738" target="_blank" rel="noreferrer">arXiv:2505.03738</a>, 2025.</li>
+<li>Luo et al. SONIC: Supersizing Motion Tracking for Natural Humanoid Whole-Body Control. <a href="https://arxiv.org/abs/2511.07820" target="_blank" rel="noreferrer">arXiv:2511.07820</a>, 2025.</li>
+<li>Ross et al. A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning. <a href="https://arxiv.org/abs/1011.0686" target="_blank" rel="noreferrer">arXiv:1011.0686</a>, 2011.</li>
+<li>Schulman et al. Proximal Policy Optimization Algorithms. <a href="https://arxiv.org/abs/1707.06347" target="_blank" rel="noreferrer">arXiv:1707.06347</a>, 2017.</li>
+</ol>
+<hr>
+<h2 id="bibtex">BibTeX</h2>
+<pre data-language="bibtex"><code>@misc{yact2026,
+  title  = {YaCT: Yet Another Closed-loop Teleoperation},
+  author = {Manoshin, Andrei and Kabir, Ivan and Korobkin, Mikhail and Movchan, Dmitrii},
+  year   = {2026},
+  url    = {https://yandex.github.io/YaCT/}
+}</code></pre>
+      </article>
+    </div>
+  </main>
+  <footer>
+    <div><span class="wordmark-mark">Y</span><strong>YaCT</strong></div>
+    <p>Yet Another Closed-loop Teleoperation</p>
+    <a href="#top">Back to top ↑</a>
+  </footer>
+  <script>
+    const progress = document.querySelector(".progress-value");
+    const updateProgress = () => {
+      const available = document.documentElement.scrollHeight - window.innerHeight;
+      progress.style.width = (available > 0 ? window.scrollY / available * 100 : 0) + "%";
+    };
+    updateProgress();
+    addEventListener("scroll", updateProgress, { passive: true });
+    addEventListener("resize", updateProgress);
+
+    const videos = Array.from(document.querySelectorAll("video[data-autoplay]"));
+    if (
+      videos.length > 0 &&
+      "IntersectionObserver" in window &&
+      !matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      const videoObserver = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          const video = entry.target;
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.35) {
+            video.play().catch(() => undefined);
+          } else {
+            video.pause();
+          }
+        }
+      }, { threshold: [0, 0.35, 0.75] });
+      videos.forEach((video) => videoObserver.observe(video));
+    }
+  </script>
+</body>
+</html>

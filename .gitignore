@@ -1,0 +1,11 @@
+# Sim / deploy runtime artifacts
+tmp/
+logs/
+*.mp4
+!docs/media/*.mp4
+*.egg-info/
+__pycache__/
+*.py[cod]
+
+# Host-side bootstrap venv (yact launcher auto-creates this)
+.venv/

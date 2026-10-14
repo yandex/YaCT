@@ -1,0 +1,36 @@
+Local modifications to FAST_LIO
+================================
+
+This subtree is based on FAST_LIO revision
+7cc4175de6f8ba2edf34bab02a42195b141027e9. It is distributed under the GNU
+General Public License version 2.0; see LICENSE in this directory.
+
+Changes made by YANDEX LLC on 2026-06-08:
+
+- src/laserMapping.cpp integrates DDS odometry publishing (raw and
+  EWMA-filtered), local filtering, residual trimming, normal visualization and
+  map load/save/freeze, and drops the Python/matplotlib dependency.
+- src/IMU_Processing.hpp adds forward IMU propagation and separate point-cloud
+  undistortion, and moves IMU initialization into UndistortPcl.
+- CMakeLists.txt builds with C++17, links CycloneDDS, tf2_ros and
+  visualization_msgs, and adds the DDS odometry sources and the map_builder
+  target.
+- src/preprocess.h declares the Velodyne ring field as std::uint16_t.
+- package.xml adds the tf2_ros and livox_ros_driver2 dependencies.
+- config/mid360.yaml sets blind to 0.2 and pcd_save_en to false.
+- src/ewma.h implements local pose smoothing.
+- src/map_builder.cpp implements local map construction.
+- include/odometry_data.idl, include/odometry_data.hpp, and
+  src/odometry_data.cpp implement the DDS odometry data type.
+
+Each modified or added source file carries a notice with its change date.
+
+Changes made by YANDEX LLC on 2026-08-31:
+
+- Corrected package.xml to declare GPL-2.0-only.
+- Removed the unused matplotlib-cpp header and its Python build dependencies.
+
+Changes made by YANDEX LLC on 2026-10-02:
+
+- README.md gained a YaCT preamble, and its relative media links were replaced
+  with links pinned to the upstream revision.

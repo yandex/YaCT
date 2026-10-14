@@ -1,0 +1,51 @@
+name: Publish Docker image
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: Image to publish (configured version and latest)
+        required: true
+        type: choice
+        default: g1-sim
+        options:
+          - g1-sim
+          - g1-sim-cpu
+          - lio
+
+concurrency:
+  group: publish-${{ inputs.image }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'yandex/YaCT'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Enable arm64 builds
+        if: inputs.image != 'g1-sim'
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+        with:
+          platforms: arm64
+
+      - name: Install publisher dependencies
+        run: |
+          python3 -m venv "$RUNNER_TEMP/yact-publish-venv"
+          "$RUNNER_TEMP/yact-publish-venv/bin/python" -m pip install PyYAML==6.0.3
+
+      - name: Publish selected image
+        env:
+          PUBLISH_IMAGE: ${{ inputs.image }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          "$RUNNER_TEMP/yact-publish-venv/bin/python" scripts/build_and_push.py "$PUBLISH_IMAGE"

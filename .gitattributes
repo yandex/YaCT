@@ -1,0 +1,9 @@
+* text=auto
+
+# Binary assets live in ordinary Git. YaCT does not require Git LFS.
+*.npz -text
+*.pt -text
+*.png -text
+*.STL -text
+*.stl -text
+*.wav -text

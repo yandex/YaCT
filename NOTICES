@@ -1,0 +1,115 @@
+-------------------------------------------------------------------------------
+Export control notice
+-------------------------------------------------------------------------------
+
+It is necessary to comply with the applicable export control laws and
+regulations. We declare that we comply with the applicable export control laws
+and regulations for the published software, and we expect the users of the
+software and the contributors to it to be compliant with them as well.
+
+-------------------------------------------------------------------------------
+Third-party software and assets
+-------------------------------------------------------------------------------
+
+FAST_LIO
+
+The docker/lio/fast_lio/ subtree is derived from FAST_LIO:
+https://github.com/hku-mars/FAST_LIO
+Upstream revision: 7cc4175de6f8ba2edf34bab02a42195b141027e9
+License: GNU General Public License version 2.0
+License text: docker/lio/fast_lio/LICENSE
+Local changes are summarized in docker/lio/fast_lio/MODIFICATIONS.
+Some files keep their original notices and licenses, including the LOAM-derived
+code in src/laserMapping.cpp (Copyright 2013 Ji Zhang, Carnegie Mellon
+University; Southwest Research Institute; BSD 3-Clause) and the IKFoM/MTK
+headers under include/IKFoM_toolkit/.
+docker/lio/scripts/main.launch is derived from FAST_LIO's launch configuration
+and is covered by the same license.
+
+Isaac Lab
+
+lib/vendor/util/math.py and quat_mul in lib/deploy/vr/util.py are derived from
+Isaac Lab:
+https://github.com/isaac-sim/IsaacLab
+Copyright (c) 2022-2025, The Isaac Lab Project Developers.
+License: BSD 3-Clause
+License text: THIRD_PARTY_LICENSES/ISAAC_LAB-BSD-3-Clause.txt
+
+The static default_position in lib/deploy/configs/g1.yaml matches the G1 29-DOF
+standing configuration in Unitree RL Lab (reordered into motor order):
+https://github.com/unitreerobotics/unitree_rl_lab/blob/main/source/unitree_rl_lab/unitree_rl_lab/assets/robots/unitree.py
+That source carries Copyright (c) 2022-2025, The Isaac Lab Project Developers.
+License: BSD 3-Clause
+License text: THIRD_PARTY_LICENSES/ISAAC_LAB-BSD-3-Clause.txt
+
+PyTorch3D
+
+Rotation-conversion functions in lib/vendor/util/math.py are derived from
+PyTorch3D (marked with links to the original source):
+https://github.com/facebookresearch/pytorch3d
+Copyright (c) Meta Platforms, Inc. and affiliates.
+License: BSD 3-Clause
+License text: THIRD_PARTY_LICENSES/PYTORCH3D-BSD-3-Clause.txt
+
+Unitree RL Gym
+
+lib/deploy/control/util.py, lib/deploy/control/remote_controller.py and the
+low-level command loop in lib/deploy/control/controller.py are derived from the
+real-robot deployment code in Unitree RL Gym:
+https://github.com/unitreerobotics/unitree_rl_gym
+Copyright (c) 2016-2023 HangZhou YuShu TECHNOLOGY CO.,LTD. ("Unitree Robotics")
+License: BSD 3-Clause
+License text: THIRD_PARTY_LICENSES/UNITREE_RL_GYM-BSD-3-Clause.txt
+
+Unitree SDK2 Python
+
+The WAV reader and chunked playback in lib/deploy/control/g1_audio_player.py are
+derived from the G1 audio example in Unitree SDK2 Python:
+https://github.com/unitreerobotics/unitree_sdk2_python/blob/master/example/g1/audio/wav.py
+Copyright (c) 2016-2024 HangZhou YuShu TECHNOLOGY CO.,LTD. ("Unitree Robotics")
+License: BSD 3-Clause
+License text: THIRD_PARTY_LICENSES/UNITREE_SDK2_PYTHON-BSD-3-Clause.txt
+
+Unitree XR Teleoperate
+
+lib/deploy/dex3.py is derived from the Dex3-1 hand controller in Unitree XR
+Teleoperate and was modified by YANDEX LLC:
+https://github.com/unitreerobotics/xr_teleoperate
+Copyright 2025 HangZhou YuShu TECHNOLOGY CO.,LTD. ("Unitree Robotics")
+License: Apache License 2.0
+License text: THIRD_PARTY_LICENSES/UNITREE_XR_TELEOPERATE-Apache-2.0.txt
+
+Livox ROS Driver 2
+
+docker/lio/scripts/MID360_our_config.json is derived from the MID360
+configuration in Livox ROS Driver 2:
+https://github.com/Livox-SDK/livox_ros_driver2
+Copyright (c) 2022 Livox.
+License: MIT
+License text: THIRD_PARTY_LICENSES/LIVOX_ROS_DRIVER2-MIT.txt
+
+Unitree Robotics models
+
+The robot-description files under assets/fk/ and
+assets/mujoco/g1_29dof_rev_1_0_custom_actuators/ are derived from Unitree
+Robotics robot-description repositories, including:
+https://github.com/unitreerobotics/unitree_ros
+https://github.com/unitreerobotics/unitree_mujoco
+Copyright (c) 2016-2022 HangZhou YuShu TECHNOLOGY CO.,LTD.
+License: BSD 3-Clause
+License text: THIRD_PARTY_LICENSES/UNITREE-BSD-3-Clause.txt
+
+NVIDIA PhysicalAI SimReady Materials
+
+assets/mujoco/g1_29dof_rev_1_0_custom_actuators/textures/floor.png is derived
+from the Ceramic_Tiles_Mosaic_Shifted_Brown diffuse texture in
+https://github.com/NVIDIA-Omniverse/PhysicalAI-SimReady-Materials (release v0.2.0):
+recolored to a warm wood tone with darkened seams and resized to 1024x1024.
+Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES.
+License: MIT No Attribution (MIT-0)
+
+Kokoro TTS
+
+assets/tts/alerts/motor_temp_warning.wav was generated with Kokoro-82M
+(https://huggingface.co/hexgrad/Kokoro-82M, Apache License 2.0) by
+scripts/generate_alert_audio.py.

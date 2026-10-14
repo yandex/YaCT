@@ -1,0 +1,16 @@
+name: lio
+version: "0.1.0"
+registry_image: lio:0.1.0
+dockerfile: docker/lio/Dockerfile
+build_context: .
+run:
+  network: host
+  privileged: true
+  env:
+    YACT_IN_DOCKER: lio
+    ROS_HOSTNAME: localhost
+    ROS_MASTER_URI: http://localhost:11311
+  devices:
+    - /dev/bus/usb
+  volumes:
+    - /dev/bus/usb:/dev/bus/usb

@@ -1,0 +1,16 @@
+name: g1-sim
+version: "0.1.0"
+registry_image: g1-sim:0.1.0
+dockerfile: docker/g1_sim/Dockerfile
+build_context: .
+python: /opt/venv/bin/python
+run:
+  gpus: all
+  network: host
+  shm_size: 8g
+  workdir: /workspace/yact
+  mount_repo: /workspace/yact
+  env:
+    MUJOCO_GL: egl
+    YACT_IN_DOCKER: g1_sim
+    PYTHONPATH: /workspace/yact

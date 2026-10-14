@@ -1,0 +1,16 @@
+name: g1-sim-cpu
+version: "0.1.0"
+registry_image: g1-sim-cpu:0.1.0
+dockerfile: docker/g1_sim_cpu/Dockerfile
+build_context: .
+python: /opt/venv/bin/python
+run:
+  # no `gpus` key — runs without --gpus (macOS/Windows with WSL2/no-NVIDIA hosts)
+  network: host
+  shm_size: 8g
+  workdir: /workspace/yact
+  mount_repo: /workspace/yact
+  env:
+    MUJOCO_GL: osmesa
+    YACT_IN_DOCKER: g1_sim
+    PYTHONPATH: /workspace/yact
