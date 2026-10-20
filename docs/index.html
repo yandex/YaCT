@@ -111,8 +111,14 @@ a {
   color: var(--teal);
 }
 
-.paper-link {
+.header-links {
   justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.paper-link {
   font-size: 13px;
   font-weight: 700;
 }
@@ -1028,6 +1034,10 @@ footer a {
     height: 64px;
   }
 
+  .header-links {
+    gap: 14px;
+  }
+
   .paper-link {
     font-size: 11px;
   }
@@ -1105,7 +1115,10 @@ footer a {
       <a href="#capabilities">Capabilities</a>
       <a href="#comparison-with-prior-whole-body-controllers">Comparison</a>
     </nav>
-    <a class="paper-link" href="https://arxiv.org/abs/2506.08931" target="_blank" rel="noreferrer">Related work: CLONE ↗</a>
+    <div class="header-links">
+      <a class="paper-link" href="https://github.com/yandex/YaCT" target="_blank" rel="noreferrer">GitHub ↗</a>
+      <a class="paper-link" href="https://arxiv.org/abs/2506.08931" target="_blank" rel="noreferrer">Related work: CLONE ↗</a>
+    </div>
   </header>
   <main id="top">
     <section class="hero">
